@@ -4,11 +4,8 @@
   },
   "events": {
     "GET": {
-      "/user/joule": [
-        {"name":"name 1"}
-      ],
-      "/user/joule?name=name1": [
-        {}
+      "/": [
+        {"key":"1nMo2yrrOao9zkO45XCAYKUPrpSQlZvdDpZthoDL9ePI"}
       ]
     }
   }

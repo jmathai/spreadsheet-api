@@ -11,17 +11,66 @@
  *    event.{queryStringParam}, Query string parameters as defined in your .joule.yml
  */
 var Response = require('joule-node-response');
+var GoogleSpreadsheet = require("google-spreadsheet");
 
 exports.handler = function(event, context) {
 	var response = new Response();
+  var doc = new GoogleSpreadsheet(event.query['key']);
+
 	response.setContext(context);
 
-  var name = event.query['name'] || 'World';
-  var greeting = 'Hello, ' + name + '.';
+  doc.getInfo(function(err, doc) {
+    if(err) {
+      response.setHttpStatusCode(400);
+      response.send(err);
+      return;
+    }
 
-  var result = {
-    "message": greeting
-  };
-  
-  response.send(result);
+    var currentWorksheet = doc.worksheets[0];
+
+    currentWorksheet.getRows({offset: 0, limit: 1}, function(err, firstRow) {
+      if(err) {
+        response.setHttpStatusCode(400);
+        response.send(err);
+        return;
+      }
+
+      var columnCount = 0;
+      for(var columnName in firstRow[0]) {
+        switch(columnName) {
+          case '_xml':
+          case 'id':
+          case '_links':
+          case 'save':
+          case 'del':
+            break;
+          default:
+            columnCount++;
+        }
+      }
+    });
+
+    currentWorksheet.getCells({'return-empty': false}, function(err, cells) {
+      var allCells = [];
+      if(err) {
+        response.setHttpStatusCode(400);
+        response.send(err);
+        return;
+      }
+
+      var cell, thisCol, thisRow, thisValue;
+      for(var i in cells) {
+        cell = cells[i];
+        thisRow = cell.row - 1;
+        thisCol = cell.col - 1;
+        thisValue = cell._value;
+        if(typeof(allCells[thisRow]) === 'undefined') {
+          allCells[thisRow] = [];
+        }
+        allCells[thisRow][thisCol] = thisValue;
+      }
+
+      response.send(allCells);
+    });
+  });
 };
